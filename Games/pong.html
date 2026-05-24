@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pong Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: sans-serif;
+    }
+    h1 {
+      margin: 20px 0;
+    }
+    canvas {
+      background: #111;
+      display: block;
+      border: 2px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏓 Pong</h1>
+  <canvas id="pong" width="600" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("pong");
+    const ctx = canvas.getContext("2d");
+
+    // Game elements
+    const paddleWidth = 10, paddleHeight = 80;
+    const ballSize = 10;
+    let upArrow = false, downArrow = false;
+
+    const player = {
+      x: 0,
+      y: canvas.height / 2 - paddleHeight / 2,
+      width: paddleWidth,
+      height: paddleHeight,
+      color: "#0f0",
+      score: 0
+    };
+
+    const ai = {
+      x: canvas.width - paddleWidth,
+      y: canvas.height / 2 - paddleHeight / 2,
+      width: paddleWidth,
+      height: paddleHeight,
+      color: "#f00",
+      score: 0
+    };
+
+    const ball = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      size: ballSize,
+      speedX: 4,
+      speedY: 4,
+      color: "#fff"
+    };
+
+    function drawRect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+
+    function drawBall(x, y, size, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawScore() {
+      ctx.font = "20px Arial";
+      ctx.fillText(`Player: ${player.score}`, 20, 20);
+      ctx.fillText(`AI: ${ai.score}`, canvas.width - 100, 20);
+    }
+
+    function resetBall() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.speedX *= -1;
+      ball.speedY = 4 * (Math.random() > 0.5 ? 1 : -1);
+    }
+
+    function update() {
+      // Move player paddle
+      if (upArrow && player.y > 0) player.y -= 6;
+      if (downArrow && player.y < canvas.height - paddleHeight) player.y += 6;
+
+      // Move AI paddle
+      if (ball.y < ai.y + paddleHeight / 2) ai.y -= 5;
+      else if (ball.y > ai.y + paddleHeight / 2) ai.y += 5;
+
+      // Move ball
+      ball.x += ball.speedX;
+      ball.y += ball.speedY;
+
+      // Wall collision
+      if (ball.y <= 0 || ball.y >= canvas.height) {
+        ball.speedY *= -1;
+      }
+
+      // Paddle collision
+      const playerHit = ball.x < player.x + player.width && ball.y > player.y && ball.y < player.y + player.height;
+      const aiHit = ball.x > ai.x - ball.size && ball.y > ai.y && ball.y < ai.y + ai.height;
+
+      if (playerHit || aiHit) {
+  ball.speedX *= -1;
+
+  // Increase speed a little after every hit
+  ball.speedX *= 1.05;
+  ball.speedY *= 1.05;
+}
+
+
+      // Score update
+      if (ball.x < 0) {
+        ai.score++;
+        resetBall();
+      }
+
+      if (ball.x > canvas.width) {
+        player.score++;
+        resetBall();
+      }
+    }
+
+    function render() {
+      drawRect(0, 0, canvas.width, canvas.height, "#111");
+      drawRect(player.x, player.y, player.width, player.height, player.color);
+      drawRect(ai.x, ai.y, ai.width, ai.height, ai.color);
+      drawBall(ball.x, ball.y, ball.size, ball.color);
+      drawScore();
+    }
+
+    function gameLoop() {
+      update();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Controls
+    window.addEventListener("keydown", (e) => {
+  if (["ArrowUp", "ArrowDown"].includes(e.key)) {
+    e.preventDefault(); // 🛑 Prevent page scroll
+    if (e.key === "ArrowUp") upArrow = true;
+    if (e.key === "ArrowDown") downArrow = true;
+  }
+});
+
+
+  window.addEventListener("keyup", (e) => {
+  if (["ArrowUp", "ArrowDown"].includes(e.key)) {
+    e.preventDefault(); // 🛑 Prevent scroll on key release too
+    if (e.key === "ArrowUp") upArrow = false;
+    if (e.key === "ArrowDown") downArrow = false;
+  }
+});
+
+    gameLoop();
+  </script>
+</body>
+</html>

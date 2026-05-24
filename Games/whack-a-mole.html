@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-A-Mole</title>
+    <style>
+        body {
+            background: #2c3e50;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 15px;
+            margin-top: 20px;
+        }
+        .hole {
+            width: 100px;
+            height: 100px;
+            background: #34495e;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid #222;
+        }
+        .mole {
+            width: 80px;
+            height: 80px;
+            background: #d35400;
+            border-radius: 50%;
+            position: absolute;
+            top: 100px;
+            left: 10px;
+            transition: top 0.1s ease;
+            cursor: pointer;
+        }
+        .mole.up {
+            top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #27ae60;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Whack-A-Mole!</h1>
+    <h2>Score: <span id="score">0</span></h2>
+    <button onclick="startGame()">Start Game</button>
+    <div class="grid">
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+    </div>
+
+    <script>
+        const moles = document.querySelectorAll('.mole');
+        const scoreDisplay = document.getElementById('score');
+        let lastHole;
+        let timeUp = false;
+        let score = 0;
+
+        function randomHole(moles) {
+            const idx = Math.floor(Math.random() * moles.length);
+            const hole = moles[idx];
+            if (hole === lastHole) return randomHole(moles);
+            lastHole = hole;
+            return hole;
+        }
+
+        function peep() {
+            const time = Math.random() * (1000 - 400) + 400;
+            const mole = randomHole(moles);
+            mole.classList.add('up');
+            setTimeout(() => {
+                mole.classList.remove('up');
+                if (!timeUp) peep();
+            }, time);
+        }
+
+        function startGame() {
+            scoreDisplay.textContent = 0;
+            timeUp = false;
+            score = 0;
+            peep();
+            setTimeout(() => {
+                timeUp = true;
+                alert('Time is up! Final Score: ' + score);
+            }, 15000);
+        }
+
+        moles.forEach(mole => mole.addEventListener('click', function() {
+            if(!this.classList.contains('up')) return;
+            score++;
+            this.classList.remove('up');
+            scoreDisplay.textContent = score;
+        }));
+    </script>
+</body>
+</html>

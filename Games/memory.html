@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Memory Match</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      gap: 15px;
+    }
+
+    .card {
+      width: 100px;
+      height: 100px;
+      background-color: #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      cursor: pointer;
+      border-radius: 10px;
+      user-select: none;
+      transition: transform 0.3s;
+    }
+
+    .card.flipped {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .card.matched {
+      background-color: #00b894;
+      color: #fff;
+      cursor: default;
+    }
+
+    .restart-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #00cec9;
+      color: #000;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .restart-btn:hover {
+      background-color: #00b894;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Memory Match</h1>
+  <div class="game-board" id="gameBoard"></div>
+  <button class="restart-btn" onclick="startGame()">Restart</button>
+
+  <script>
+    const emojis = ['🍎', '🍌', '🍒', '🍇', '🍉', '🍓', '🍍', '🥝'];
+    let selected = [];
+    let matchedCount = 0;
+
+    function shuffle(array) {
+      return array.sort(() => 0.5 - Math.random());
+    }
+
+    function startGame() {
+      const board = document.getElementById('gameBoard');
+      board.innerHTML = '';
+      matchedCount = 0;
+      selected = [];
+
+      const cards = shuffle([...emojis, ...emojis]);
+
+      cards.forEach((emoji, index) => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.dataset.emoji = emoji;
+        card.dataset.index = index;
+        card.textContent = '';
+        card.addEventListener('click', flipCard);
+        board.appendChild(card);
+      });
+    }
+
+    function flipCard(e) {
+      const card = e.target;
+      if (card.classList.contains('flipped') || card.classList.contains('matched') || selected.length === 2) return;
+
+      card.classList.add('flipped');
+      card.textContent = card.dataset.emoji;
+      selected.push(card);
+
+      if (selected.length === 2) {
+        const [card1, card2] = selected;
+        if (card1.dataset.emoji === card2.dataset.emoji) {
+          card1.classList.add('matched');
+          card2.classList.add('matched');
+          matchedCount += 1;
+          selected = [];
+          if (matchedCount === emojis.length) {
+            setTimeout(() => alert('🎉 You matched all cards!'), 300);
+          }
+        } else {
+          setTimeout(() => {
+            card1.classList.remove('flipped');
+            card2.classList.remove('flipped');
+            card1.textContent = '';
+            card2.textContent = '';
+            selected = [];
+          }, 800);
+        }
+      }
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
