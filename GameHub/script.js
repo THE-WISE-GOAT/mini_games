@@ -5,7 +5,8 @@ const games = [
     { name: 'Snake', file: '../Games/snake.html', description: 'Guide the snake and collect food without hitting walls.' },
     { name: 'Whack-a-Mole', file: '../Games/whack-a-mole.html', description: 'Smash moles as they randomly pop up!' },
     { name: 'Word Scramble', file: '../Games/word-scramble.html', description: 'Unscramble the letters to find the word.' },
-    { name: 'Flappy Bird', file: '../Games/flappy-bird.html', description: 'Navigate through pipes with a bouncing bird.' }
+    { name: 'Flappy Bird', file: '../Games/flappy-bird.html', description: 'Navigate through pipes with a bouncing bird.' },
+    { name: 'Tic Tac Toe', file: '../Games/tic-tac-toe.html', description: 'Classic X and O strategy game.' }
 ];
 
 const gameList = document.getElementById('game-list');
