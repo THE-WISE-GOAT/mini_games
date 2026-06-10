@@ -28,6 +28,7 @@ Here is the current layout of my learning playground:
 | `📂 Games/whack-a-mole.html` | Whack the moles as they pop up randomly from their holes. | Dynamic CSS class toggling and tracking click accuracy. |
 | `📂 Games/word-scramble.html` | A word puzzle game where you guess the scrambled word. | String manipulation, arrays, and handling text inputs. |
 | `📂 Games/flappy-bird.html` | A minimalist canvas game navigating a block through pipes. | Gravity simulation, collision detection, and obstacle rendering. |
+| `📂 Games/tic-tac-toe.html` | Classic X and O strategy game. | Grid layout, game state management, and win condition checking. |
 | `📂 GameHub/index.html` | Central hub to play all games. | Flexbox layout, iframe embedding, and dynamic loading. |
 
 ---
