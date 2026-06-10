@@ -8,6 +8,12 @@ Every single game here is entirely self-contained within its own file, making it
 
 ---
 
+## 🏠 Game Hub
+
+Want to play all games in one place? Check out the **`GameHub/`** folder!
+
+A centralized hub where all games can be accessed and played without leaving the page. Simply open `GameHub/index.html` and select any game from the sidebar.
+
 ## 🎮 What's Inside?
 
 Here is the current layout of my learning playground:
@@ -22,6 +28,7 @@ Here is the current layout of my learning playground:
 | `📂 Games/whack-a-mole.html` | Whack the moles as they pop up randomly from their holes. | Dynamic CSS class toggling and tracking click accuracy. |
 | `📂 Games/word-scramble.html` | A word puzzle game where you guess the scrambled word. | String manipulation, arrays, and handling text inputs. |
 | `📂 Games/flappy-bird.html` | A minimalist canvas game navigating a block through pipes. | Gravity simulation, collision detection, and obstacle rendering. |
+| `📂 GameHub/index.html` | Central hub to play all games. | Flexbox layout, iframe embedding, and dynamic loading. |
 
 ---
 
@@ -37,6 +44,6 @@ Building these tiny projects helped me wrap my head around a lot of things that 
 You don't need to install anything complex, spin up a server, or run any build commands. 
 
 1. Clone this repository to your laptop.
-2. Open the `Games` folder (or the `calculator` folder).
-3. Double-click any `.html` file. It will launch instantly right in your favorite web browser!
+2. For individual games: Open the `Games` folder (or the `calculator` folder) and double-click any `.html` file.
+3. For all games at once: Open `GameHub/index.html` to launch the centralized game hub!
 
