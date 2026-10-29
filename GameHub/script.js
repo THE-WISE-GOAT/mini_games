@@ -1,7 +1,10 @@
 const games = [
+    { name: 'Breakout', file: '../Games/breakout.html', description: 'Bounce the ball to break all the bricks before you run out of lives.' },
     { name: 'Catch the Square', file: '../Games/catch-square.html', description: 'Click the moving square before time runs out!' },
     { name: 'Memory Match', file: '../Games/memory.html', description: 'Flip cards and match pairs to test your memory.' },
+    { name: 'Minesweeper', file: '../Games/minesweeper.html', description: 'Clear the minefield without triggering hidden mines.' },
     { name: 'Pong', file: '../Games/pong.html', description: 'Classic arcade ping-pong against AI.' },
+    { name: 'Simon', file: '../Games/simon.html', description: 'Repeat the light and sound pattern as it grows each round.' },
     { name: 'Snake', file: '../Games/snake.html', description: 'Guide the snake and collect food without hitting walls.' },
     { name: 'Whack-a-Mole', file: '../Games/whack-a-mole.html', description: 'Smash moles as they randomly pop up!' },
     { name: 'Word Scramble', file: '../Games/word-scramble.html', description: 'Unscramble the letters to find the word.' },
