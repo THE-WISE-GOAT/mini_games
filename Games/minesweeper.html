@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Minesweeper</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #161616;
+            color: #eee;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0 0 14px;
+            font-size: 1.6rem;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .toolbar select {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #1f1f1f;
+            color: #eee;
+            font-size: 0.9rem;
+        }
+
+        .counter {
+            min-width: 74px;
+            padding: 8px 12px;
+            background: #1f1f1f;
+            border: 1px solid #333;
+            border-radius: 6px;
+            font-variant-numeric: tabular-nums;
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        #reset {
+            width: 46px;
+            height: 46px;
+            font-size: 24px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+            cursor: pointer;
+        }
+
+        #reset:hover {
+            background: #333;
+        }
+
+        #board {
+            display: grid;
+            gap: 3px;
+            padding: 6px;
+            background: #101010;
+            border-radius: 8px;
+        }
+
+        .cell {
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: inherit;
+            border: none;
+            border-radius: 4px;
+            background: #3a3a3a;
+            color: transparent;
+            cursor: pointer;
+            padding: 0;
+            line-height: 32px;
+            text-align: center;
+        }
+
+        .cell:hover:not(.open) {
+            background: #454545;
+        }
+
+        .cell.open {
+            background: #242424;
+            cursor: default;
+            color: #ddd;
+        }
+
+        .cell.flagged {
+            background: #3a3a3a;
+            color: inherit;
+        }
+
+        .cell.mine {
+            background: #c0392b;
+            color: #fff;
+        }
+
+        .cell.boom {
+            background: #e74c3c;
+        }
+
+        .cell[data-n="1"] { color: #3498db; }
+        .cell[data-n="2"] { color: #2ecc71; }
+        .cell[data-n="3"] { color: #e74c3c; }
+        .cell[data-n="4"] { color: #9b59b6; }
+        .cell[data-n="5"] { color: #e67e22; }
+        .cell[data-n="6"] { color: #1abc9c; }
+        .cell[data-n="7"] { color: #ecf0f1; }
+        .cell[data-n="8"] { color: #95a5a6; }
+
+        #status {
+            min-height: 24px;
+            margin-top: 14px;
+            color: #ffd60a;
+        }
+
+        .hint {
+            color: #777;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 640px) {
+            .cell {
+                width: 26px;
+                height: 26px;
+                line-height: 26px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Minesweeper</h1>
+
+    <div class="toolbar">
+        <span class="counter" id="mineCounter">10</span>
+        <select id="difficulty">
+            <option value="9,10">Beginner — 9×9, 10 mines</option>
+            <option value="16,40">Intermediate — 16×16, 40 mines</option>
+            <option value="16,60">Expert — 16×16, 60 mines</option>
+        </select>
+        <button id="reset" type="button" aria-label="New game">🙂</button>
+        <span class="counter" id="timer">0s</span>
+    </div>
+
+    <div id="board"></div>
+    <div id="status"></div>
+    <p class="hint">Click to reveal · right-click to flag · first click is always safe</p>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const mineCounterEl = document.getElementById('mineCounter');
+        const timerEl = document.getElementById('timer');
+        const statusEl = document.getElementById('status');
+        const resetBtn = document.getElementById('reset');
+        const difficultyEl = document.getElementById('difficulty');
+
+        let size = 9;
+        let mineTotal = 10;
+        let cells = [];
+        let mines = [];
+        let openCount = 0;
+        let flaggedCount = 0;
+        let started = false;
+        let over = false;
+        let seconds = 0;
+        let timerId = null;
+
+        function indexOf(r, c) {
+            return r * size + c;
+        }
+
+        function neighbours(r, c) {
+            const list = [];
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (nr >= 0 && nr < size && nc >= 0 && nc < size) list.push([nr, nc]);
+                }
+            }
+            return list;
+        }
+
+        function startTimer() {
+            if (timerId) return;
+            timerId = setInterval(() => {
+                seconds++;
+                timerEl.textContent = seconds + 's';
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerId);
+            timerId = null;
+        }
+
+        function plantMines(safeR, safeC) {
+            mines = Array.from({ length: size * size }, () => false);
+            const forbidden = new Set([indexOf(safeR, safeC)]);
+            neighbours(safeR, safeC).forEach(([r, c]) => forbidden.add(indexOf(r, c)));
+
+            let planted = 0;
+            while (planted < mineTotal) {
+                const pos = Math.floor(Math.random() * size * size);
+                if (mines[pos] || forbidden.has(pos)) continue;
+                mines[pos] = true;
+                planted++;
+            }
+        }
+
+        function mineCountAt(r, c) {
+            return neighbours(r, c).filter(([nr, nc]) => mines[indexOf(nr, nc)]).length;
+        }
+
+        function build() {
+            stopTimer();
+            const [newSize, newMines] = difficultyEl.value.split(',').map(Number);
+            size = newSize;
+            mineTotal = newMines;
+            cells = [];
+            mines = [];
+            openCount = 0;
+            flaggedCount = 0;
+            started = false;
+            over = false;
+            seconds = 0;
+            statusEl.textContent = '';
+            resetBtn.textContent = '🙂';
+            timerEl.textContent = '0s';
+            mineCounterEl.textContent = String(mineTotal);
+            boardEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            boardEl.innerHTML = '';
+
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const cell = document.createElement('button');
+                    cell.type = 'button';
+                    cell.className = 'cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    cell.addEventListener('click', () => reveal(r, c));
+                    cell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        flag(r, c);
+                    });
+                    boardEl.appendChild(cell);
+                    cells.push(cell);
+                }
+            }
+        }
+
+        function cellAt(r, c) {
+            return cells[indexOf(r, c)];
+        }
+
+        function flag(r, c) {
+            if (over) return;
+            const cell = cellAt(r, c);
+            if (cell.classList.contains('open')) return;
+            if (!cell.classList.contains('flagged') && flaggedCount >= mineTotal) return;
+
+            cell.classList.toggle('flagged');
+            cell.textContent = cell.classList.contains('flagged') ? '🚩' : '';
+            flaggedCount += cell.classList.contains('flagged') ? 1 : -1;
+            mineCounterEl.textContent = String(mineTotal - flaggedCount);
+        }
+
+        function reveal(r, c) {
+            if (over) return;
+            const cell = cellAt(r, c);
+            if (cell.classList.contains('open') || cell.classList.contains('flagged')) return;
+
+            if (!started) {
+                plantMines(r, c);
+                started = true;
+                startTimer();
+            }
+
+            if (mines[indexOf(r, c)]) {
+                cell.classList.add('open', 'mine', 'boom');
+                cell.textContent = '💥';
+                lose();
+                return;
+            }
+
+            flood(r, c);
+
+            if (openCount === size * size - mineTotal) {
+                over = true;
+                stopTimer();
+                statusEl.textContent = `Cleared in ${seconds}s.`;
+                resetBtn.textContent = '😎';
+            }
+        }
+
+        function flood(startR, startC) {
+            const stack = [[startR, startC]];
+            const seen = new Set();
+
+            while (stack.length) {
+                const [r, c] = stack.pop();
+                const key = indexOf(r, c);
+                if (seen.has(key)) continue;
+                seen.add(key);
+
+                const cell = cellAt(r, c);
+                if (cell.classList.contains('flagged') || cell.classList.contains('open')) continue;
+                if (mines[key]) continue;
+
+                cell.classList.add('open');
+                cell.textContent = '';
+                openCount++;
+
+                const count = mineCountAt(r, c);
+                if (count > 0) {
+                    cell.dataset.n = count;
+                    cell.textContent = count;
+                } else {
+                    neighbours(r, c).forEach((n) => stack.push(n));
+                }
+            }
+        }
+
+        function lose() {
+            over = true;
+            stopTimer();
+            cells.forEach((cell, i) => {
+                if (mines[i] && !cell.classList.contains('open')) {
+                    cell.classList.add('open', 'mine');
+                    cell.textContent = '💣';
+                }
+            });
+            statusEl.textContent = 'Boom. Press 🙂 to try again.';
+            resetBtn.textContent = '😵';
+        }
+
+        resetBtn.addEventListener('click', build);
+        difficultyEl.addEventListener('change', build);
+
+        build();
+    </script>
+</body>
+</html>
