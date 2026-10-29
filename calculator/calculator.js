@@ -82,7 +82,7 @@ function calculateResult() {
         return;
     }
 
-    result = Math.round(result * 1000000) / 1000000;
+if (Number.isFinite(result * 1000000)) result = Math.round(result * 1000000) / 1000000;
     currentNumber = String(result);
     previousNumber = '';
     operation = null;
