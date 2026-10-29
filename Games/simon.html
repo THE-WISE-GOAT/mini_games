@@ -159,6 +159,8 @@
         let accepting = false;
         let busy = false;
         let best = 0;
+        let runVersion = 0;
+        let nextRoundTimeout = null;
 
         try {
             best = Number(localStorage.getItem('simon-best')) || 0;
@@ -197,16 +199,19 @@
             return wait(duration).then(() => pad.classList.remove('lit'));
         }
 
-        async function playback() {
+        async function playback(version) {
             busy = true;
             accepting = false;
             pads.forEach((p) => { p.disabled = true; });
             messageEl.textContent = 'Watch…';
             await wait(500);
+            if (version !== runVersion) return;
 
             for (const step of sequence) {
                 await light(step);
+                if (version !== runVersion) return;
                 await wait(GAP_MS);
+                if (version !== runVersion) return;
             }
 
             inputIndex = 0;
@@ -216,10 +221,11 @@
             messageEl.textContent = 'Your turn';
         }
 
-        function extendSequence() {
+        function extendSequence(version = runVersion) {
+            if (version !== runVersion) return;
             sequence.push(Math.floor(Math.random() * 4));
             levelEl.textContent = String(sequence.length);
-            playback();
+            playback(version);
         }
 
         function padPressed(index) {
@@ -230,7 +236,7 @@
             if (sequence[inputIndex] !== index) {
                 accepting = false;
                 messageEl.textContent = 'Wrong pad — game over';
-                failFlash();
+                failFlash(runVersion);
                 return;
             }
 
@@ -247,29 +253,42 @@
                     }
                 }
                 messageEl.textContent = 'Nice — next round';
-                setTimeout(extendSequence, 900);
+                nextRoundTimeout = setTimeout(() => {
+                    nextRoundTimeout = null;
+                    extendSequence(runVersion);
+                }, 900);
             }
         }
 
-        async function failFlash() {
+        async function failFlash(version) {
             pads.forEach((p) => { p.disabled = true; });
             for (let i = 0; i < 3; i++) {
+                if (version !== runVersion) return;
                 pads.forEach((p) => p.classList.add('lit'));
                 await wait(160);
+                if (version !== runVersion) return;
                 pads.forEach((p) => p.classList.remove('lit'));
                 await wait(160);
+                if (version !== runVersion) return;
             }
             messageEl.textContent = 'Press start to try again';
             startBtn.textContent = 'Restart';
         }
 
         function start() {
+            runVersion += 1;
+            if (nextRoundTimeout) {
+                clearTimeout(nextRoundTimeout);
+                nextRoundTimeout = null;
+            }
+            pads.forEach((p) => p.classList.remove('lit'));
             sequence = [];
             inputIndex = 0;
             accepting = false;
+            busy = false;
             levelEl.textContent = '0';
             startBtn.textContent = 'Restart';
-            extendSequence();
+            extendSequence(runVersion);
         }
 
         pads.forEach((pad, index) => {
