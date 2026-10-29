@@ -199,6 +199,11 @@
             return list;
         }
 
+        function setCellA11y(cell, r, c, state) {
+            cell.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}, ${state}`);
+            cell.setAttribute('aria-disabled', String(cell.classList.contains('open')));
+        }
+
         function startTimer() {
             if (timerId) return;
             timerId = setInterval(() => {
@@ -256,6 +261,7 @@
                     cell.className = 'cell';
                     cell.dataset.r = r;
                     cell.dataset.c = c;
+                    setCellA11y(cell, r, c, 'hidden');
                     cell.addEventListener('click', () => reveal(r, c));
                     cell.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
@@ -280,6 +286,7 @@
             cell.classList.toggle('flagged');
             cell.textContent = cell.classList.contains('flagged') ? '🚩' : '';
             flaggedCount += cell.classList.contains('flagged') ? 1 : -1;
+            setCellA11y(cell, r, c, cell.classList.contains('flagged') ? 'flagged' : 'hidden');
             mineCounterEl.textContent = String(mineTotal - flaggedCount);
         }
 
@@ -297,6 +304,7 @@
             if (mines[indexOf(r, c)]) {
                 cell.classList.add('open', 'mine', 'boom');
                 cell.textContent = '💥';
+                setCellA11y(cell, r, c, 'exploded mine');
                 lose();
                 return;
             }
@@ -333,7 +341,9 @@
                 if (count > 0) {
                     cell.dataset.n = count;
                     cell.textContent = count;
+                    setCellA11y(cell, r, c, `opened with ${count} adjacent mines`);
                 } else {
+                    setCellA11y(cell, r, c, 'opened and empty');
                     neighbours(r, c).forEach((n) => stack.push(n));
                 }
             }
@@ -346,6 +356,9 @@
                 if (mines[i] && !cell.classList.contains('open')) {
                     cell.classList.add('open', 'mine');
                     cell.textContent = '💣';
+                    const r = Number(cell.dataset.r);
+                    const c = Number(cell.dataset.c);
+                    setCellA11y(cell, r, c, 'mine');
                 }
             });
             statusEl.textContent = 'Boom. Press 🙂 to try again.';
