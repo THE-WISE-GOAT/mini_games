@@ -1,26 +1,33 @@
-# Advanced Calculator
+# Calculator
 
-A feature-rich calculator built with HTML, CSS, and JavaScript.
+A calculator built with plain HTML, CSS and JavaScript.
 
 ## Features
 
-- Basic operations: Addition, Subtraction, Multiplication, Division
-- Advanced operations:
-  - Square root (√)
-  - Square (x²)
-  - Exponentiation (xʸ)
-  - Modulo (mod)
-  - Percentage (%)
-- Clear (C) and Delete (⌫) functions
-- Positive/Negative toggle (±)
-- Responsive modern design with gradient background
-- Error handling for division by zero and negative square roots
+- Addition, subtraction, multiplication, division
+- Modulo (`mod`), exponent (`xʸ`), square root (`√`), square (`x²`), percentage (`%`)
+- Sign toggle (`±`), clear (`C`), backspace (`⌫`)
+- Chained operations: `1 + 2 + 3 =` works without pressing `=` in between
+- Error handling for division by zero, negative square roots and overflow
+- Keyboard input
+
+## Keyboard
+
+| Key | Action |
+| :--- | :--- |
+| `0`–`9`, `.` | Enter digits |
+| `+` `-` `*` `/` `^` | Operators |
+| `m` | Modulo |
+| `%` | Percentage |
+| `Enter` or `=` | Calculate |
+| `Backspace` | Delete last digit |
+| `Esc` | Clear |
 
 ## Files
 
-- `calculator.html` - Main HTML structure
-- `calculator.css` - Styled with modern dark theme
-- `calculator.js` - Calculator logic
+- `calculator.html` — markup
+- `calculator.css` — styling
+- `calculator.js` — logic
 
 ## Usage
 
