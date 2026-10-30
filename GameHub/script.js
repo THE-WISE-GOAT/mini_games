@@ -10,49 +10,65 @@ const games = [
     { name: 'Word Scramble', file: '../Games/word-scramble.html', description: 'Unscramble the letters to find the word.' },
     { name: 'Flappy Bird', file: '../Games/flappy-bird.html', description: 'Navigate through pipes with a bouncing bird.' },
     { name: 'Tic Tac Toe', file: '../Games/tic-tac-toe.html', description: 'Classic X and O strategy game.' }
-];
+];  
 
 const gameList = document.getElementById('game-list');
 const gameContainer = document.getElementById('game-container');
 const welcomeScreen = document.getElementById('welcome-screen');
 
-function initGameList() {
-    games.forEach((game, index) => {
-        const li = document.createElement('li');
-        li.className = 'game-list-item';
-        li.innerHTML = `
-            <h3>${game.name}</h3>
-            <p>${game.description}</p>
-        `;
-        li.addEventListener('click', () => loadGame(game.file, li));
-        gameList.appendChild(li);
+let activeItem = null;
+let backBtn = null;
+
+function buildList() {
+    games.forEach((game) => {
+        const item = document.createElement('li');
+        item.className = 'game-list-item';
+        item.tabIndex = 0;
+
+        const title = document.createElement('h3');
+        title.textContent = game.name;
+        const desc = document.createElement('p');
+        desc.textContent = game.description;
+
+        item.append(title, desc);
+        item.addEventListener('click', () => loadGame(game, item));
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                loadGame(game, item);
+            }
+        });
+        gameList.appendChild(item);
     });
 }
 
-function loadGame(gameFile, clickedItem) {
-    document.querySelectorAll('.game-list-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    clickedItem.classList.add('active');
+function loadGame(game, item) {
+    setActive(item);
 
     const iframe = document.createElement('iframe');
-    iframe.src = gameFile;
     iframe.className = 'game-frame';
+    iframe.src = game.file;
+    iframe.title = game.name;
 
-    gameContainer.innerHTML = '';
-    gameContainer.appendChild(iframe);
-
-    const backBtn = document.createElement('button');
+    backBtn = document.createElement('button');
     backBtn.className = 'back-btn';
+    backBtn.type = 'button';
     backBtn.textContent = '← Back to Hub';
-    backBtn.addEventListener('click', () => {
-        gameContainer.innerHTML = '';
-        gameContainer.appendChild(welcomeScreen);
-        document.querySelectorAll('.game-list-item').forEach(item => {
-            item.classList.remove('active');
-        });
-    });
-    gameContainer.appendChild(backBtn);
+    backBtn.addEventListener('click', showWelcome);
+
+    gameContainer.replaceChildren(iframe, backBtn);
 }
 
-document.addEventListener('DOMContentLoaded', initGameList);
+function showWelcome() {
+    setActive(null);
+    backBtn = null;
+    gameContainer.replaceChildren(welcomeScreen);
+}
+
+function setActive(item) {
+    if (activeItem) activeItem.classList.remove('active');
+    activeItem = item;
+    if (activeItem) activeItem.classList.add('active');
+}
+
+buildList();

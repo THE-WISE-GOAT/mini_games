@@ -69,6 +69,11 @@ body {
     border: 1px solid transparent;
 }
 
+.game-list-item:focus-visible {
+    outline: 2px solid #4fc3f7;
+    outline-offset: 2px;
+}
+
 .game-list-item:hover {
     background: rgba(79, 195, 247, 0.2);
     border-color: rgba(79, 195, 247, 0.5);
@@ -129,14 +134,18 @@ body {
 }
 
 .game-frame {
+    display: block;
     width: 100%;
     height: 100%;
     border: none;
 }
 
 .back-btn {
-    margin-top: 15px;
-    padding: 10px 20px;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    padding: 8px 16px;
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.3);
