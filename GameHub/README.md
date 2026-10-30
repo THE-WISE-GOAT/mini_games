@@ -1,38 +1,45 @@
 # Game Hub
 
-A centralized hub for playing all mini-games in this collection.
+A sidebar hub that loads every game in this repository inside an iframe.
 
-## Features
+## How to use
 
-- **Game Gallery**: All games are listed in the sidebar with descriptions
-- **Seamless Switching**: Play any game without leaving the hub
-- **Responsive Design**: Works on desktop and mobile devices
-- **Clean Interface**: Modern dark theme with smooth animations
+1. Open `index.html` in a browser.
+2. Pick a game from the sidebar (mouse, or Tab + Enter).
+3. Use "Back to Hub" to return to the welcome screen.
 
-## How to Use
+If your browser blocks `file://` iframes, serve the repo root instead:
 
-1. Open `index.html` in your browser
-2. Click on any game from the left sidebar to start playing
-3. Use the "Back to Hub" button to return and select another game
+```bash
+python3 -m http.server 8000
+# then visit http://localhost:8000/GameHub/
+```
 
-## Games Available
+## Games listed
 
 | Game | Description |
 | :--- | :--- |
-| Catch the Square | Click the moving square before time runs out |
-| Memory Match | Flip cards and match pairs |
-| Pong | Classic arcade ping-pong against AI |
-| Snake | Collect food and grow without hitting walls |
-| Whack-a-Mole | Smash moles as they pop up randomly |
-| Word Scramble | Unscramble letters to find the word |
-| Flappy Bird | Navigate through pipes with a bouncing bird |
+| Breakout | Clear the bricks before the lives run out |
+| Catch the Square | Click the square before the 30 seconds are up |
+| Flappy Bird | Squeeze through the gaps between pipes |
+| Memory Match | Flip cards and find every pair |
+| Minesweeper | Flag the mines and clear the board |
+| Pong | Paddle ball against the computer, first to five |
+| Simon | Repeat a growing pattern of lights and tones |
+| Snake | Eat, grow, and avoid your own tail |
+| Tic Tac Toe | Two players, one board |
+| Whack-a-Mole | 15 seconds of moles popping up |
+| Word Scramble | Unscramble the letters into a real word |
+| Calculator | Powers, roots, modulo and percentages |
 
-## File Structure
+## Files
 
 ```
 GameHub/
-├── index.html    # Main hub page
-├── style.css     # Hub styling
-├── script.js     # Game loading logic
-└── README.md     # This file
+├── index.html    hub page
+├── style.css     hub styling
+├── script.js     game list and loading logic
+└── README.md     this file
 ```
+
+To add a game, drop it in `Games/` and add an entry to the `games` array in `script.js`.
