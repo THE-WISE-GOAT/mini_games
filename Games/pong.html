@@ -1,173 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Pong Game</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pong</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
     body {
       margin: 0;
-      background: #000;
-      color: #fff;
+      min-height: 100vh;
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      font-family: sans-serif;
+      padding: 20px 16px;
     }
+
     h1 {
-      margin: 20px 0;
+      margin: 0 0 12px;
+      font-size: 1.6rem;
     }
+
     canvas {
       background: #111;
-      display: block;
-      border: 2px solid #fff;
+      border: 2px solid #333;
+      border-radius: 8px;
+      max-width: 100%;
+    }
+
+    .hint {
+      margin-top: 14px;
+      color: #777;
+      font-size: 0.85rem;
     }
   </style>
 </head>
 <body>
-  <h1>🏓 Pong</h1>
+  <h1>Pong</h1>
   <canvas id="pong" width="600" height="400"></canvas>
+  <p class="hint">W / S or Up / Down to move &middot; Space to pause or restart &middot; First to 5 wins</p>
 
   <script>
-    const canvas = document.getElementById("pong");
-    const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById('pong');
+    const ctx = canvas.getContext('2d');
 
-    // Game elements
-    const paddleWidth = 10, paddleHeight = 80;
-    const ballSize = 10;
-    let upArrow = false, downArrow = false;
+    const PADDLE_W = 10;
+    const PADDLE_H = 80;
+    const BALL_R = 7;
+    const PLAYER_SPEED = 6;
+    const AI_SPEED = 4.5;
+    const BALL_MAX_SPEED = 11;
+    const WIN_SCORE = 5;
 
     const player = {
-      x: 0,
-      y: canvas.height / 2 - paddleHeight / 2,
-      width: paddleWidth,
-      height: paddleHeight,
-      color: "#0f0",
-      score: 0
+      x: 16,
+      y: canvas.height / 2 - PADDLE_H / 2,
+      score: 0,
+      color: '#4caf50'
     };
 
     const ai = {
-      x: canvas.width - paddleWidth,
-      y: canvas.height / 2 - paddleHeight / 2,
-      width: paddleWidth,
-      height: paddleHeight,
-      color: "#f00",
-      score: 0
+      x: canvas.width - 16 - PADDLE_W,
+      y: canvas.height / 2 - PADDLE_H / 2,
+      score: 0,
+      color: '#e74c3c'
     };
 
-    const ball = {
-      x: canvas.width / 2,
-      y: canvas.height / 2,
-      size: ballSize,
-      speedX: 4,
-      speedY: 4,
-      color: "#fff"
-    };
+    const ball = { x: 0, y: 0, vx: 0, vy: 0 };
 
-    function drawRect(x, y, w, h, color) {
-      ctx.fillStyle = color;
-      ctx.fillRect(x, y, w, h);
-    }
+    let keys = { up: false, down: false };
+    let paused = false;
+    let gameOver = false;
+    let message = 'Rally in progress';
+    let serveAt = null;
 
-    function drawBall(x, y, size, color) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawScore() {
-      ctx.font = "20px Arial";
-      ctx.fillText(`Player: ${player.score}`, 20, 20);
-      ctx.fillText(`AI: ${ai.score}`, canvas.width - 100, 20);
-    }
-
-    function resetBall() {
+    function parkBall() {
       ball.x = canvas.width / 2;
       ball.y = canvas.height / 2;
-      ball.speedX *= -1;
-      ball.speedY = 4 * (Math.random() > 0.5 ? 1 : -1);
+      ball.vx = 0;
+      ball.vy = 0;
     }
 
-    function update() {
-      // Move player paddle
-      if (upArrow && player.y > 0) player.y -= 6;
-      if (downArrow && player.y < canvas.height - paddleHeight) player.y += 6;
+    function serve(dir) {
+      const angle = (Math.random() * 0.6 - 0.3) * Math.PI;
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.vx = Math.cos(angle) * 5 * dir;
+      ball.vy = Math.sin(angle) * 5;
+    }
 
-      // Move AI paddle
-      if (ball.y < ai.y + paddleHeight / 2) ai.y -= 5;
-      else if (ball.y > ai.y + paddleHeight / 2) ai.y += 5;
+    function scheduleServe(delay) {
+      parkBall();
+      serveAt = performance.now() + delay;
+      message = 'Get ready…';
+    }
 
-      // Move ball
-      ball.x += ball.speedX;
-      ball.y += ball.speedY;
+    function reset() {
+      player.score = 0;
+      ai.score = 0;
+      player.y = canvas.height / 2 - PADDLE_H / 2;
+      ai.y = canvas.height / 2 - PADDLE_H / 2;
+      gameOver = false;
+      paused = false;
+      message = 'Rally in progress';
+      scheduleServe(600);
+    }
 
-      // Wall collision
-      if (ball.y <= 0 || ball.y >= canvas.height) {
-        ball.speedY *= -1;
+    function paddleBounce(paddle) {
+      const speed = Math.min(Math.hypot(ball.vx, ball.vy) * 1.05, BALL_MAX_SPEED);
+      const offset = (ball.y - (paddle.y + PADDLE_H / 2)) / (PADDLE_H / 2);
+      const angle = offset * (Math.PI / 3);
+      const dir = paddle === player ? 1 : -1;
+      ball.vx = Math.cos(angle) * speed * dir;
+      ball.vy = Math.sin(angle) * speed;
+    }
+
+    function update(now) {
+      if (serveAt !== null && !paused && now >= serveAt) {
+        serveAt = null;
+        serve(Math.random() > 0.5 ? 1 : -1);
+        message = 'Rally in progress';
       }
 
-      // Paddle collision
-      const playerHit = ball.x < player.x + player.width && ball.y > player.y && ball.y < player.y + player.height;
-      const aiHit = ball.x > ai.x - ball.size && ball.y > ai.y && ball.y < ai.y + ai.height;
+      if (keys.up) player.y -= PLAYER_SPEED;
+      if (keys.down) player.y += PLAYER_SPEED;
+      player.y = Math.max(0, Math.min(canvas.height - PADDLE_H, player.y));
 
-      if (playerHit || aiHit) {
-  ball.speedX *= -1;
+      const aiTarget = ball.vx > 0 ? ball.y : canvas.height / 2;
+      const aiCenter = ai.y + PADDLE_H / 2;
+      if (aiTarget < aiCenter - 6) ai.y -= AI_SPEED;
+      else if (aiTarget > aiCenter + 6) ai.y += AI_SPEED;
+      ai.y = Math.max(0, Math.min(canvas.height - PADDLE_H, ai.y));
 
-  // Increase speed a little after every hit
-  ball.speedX *= 1.05;
-  ball.speedY *= 1.05;
-}
+      if (gameOver || paused) return;
 
+      ball.x += ball.vx;
+      ball.y += ball.vy;
 
-      // Score update
-      if (ball.x < 0) {
+      if (ball.y <= BALL_R) {
+        ball.y = BALL_R;
+        ball.vy *= -1;
+      } else if (ball.y >= canvas.height - BALL_R) {
+        ball.y = canvas.height - BALL_R;
+        ball.vy *= -1;
+      }
+
+      const hitPlayer = ball.x - BALL_R <= player.x + PADDLE_W &&
+        ball.x - BALL_R >= player.x - 4 &&
+        ball.y >= player.y && ball.y <= player.y + PADDLE_H && ball.vx < 0;
+
+      const hitAi = ball.x + BALL_R >= ai.x &&
+        ball.x + BALL_R <= ai.x + PADDLE_W + 4 &&
+        ball.y >= ai.y && ball.y <= ai.y + PADDLE_H && ball.vx > 0;
+
+      if (hitPlayer) {
+        ball.x = player.x + PADDLE_W + BALL_R;
+        paddleBounce(player);
+      } else if (hitAi) {
+        ball.x = ai.x - BALL_R;
+        paddleBounce(ai);
+      }
+
+      if (ball.x < -BALL_R * 2) {
         ai.score++;
-        resetBall();
-      }
-
-      if (ball.x > canvas.width) {
+        endRally('Point to the computer');
+      } else if (ball.x > canvas.width + BALL_R * 2) {
         player.score++;
-        resetBall();
+        endRally('Point to you');
       }
     }
 
-    function render() {
-      drawRect(0, 0, canvas.width, canvas.height, "#111");
-      drawRect(player.x, player.y, player.width, player.height, player.color);
-      drawRect(ai.x, ai.y, ai.width, ai.height, ai.color);
-      drawBall(ball.x, ball.y, ball.size, ball.color);
-      drawScore();
+    function endRally(text) {
+      if (player.score >= WIN_SCORE || ai.score >= WIN_SCORE) {
+        gameOver = true;
+        serveAt = null;
+        parkBall();
+        message = (player.score > ai.score ? 'You win!' : 'Computer wins') + ' — press Space to play again';
+      } else {
+        scheduleServe(1000);
+        message = text + ' — get ready…';
+      }
     }
 
-    function gameLoop() {
-      update();
-      render();
-      requestAnimationFrame(gameLoop);
+    function draw() {
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.setLineDash([8, 10]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, PADDLE_W, PADDLE_H);
+      ctx.fillStyle = ai.color;
+      ctx.fillRect(ai.x, ai.y, PADDLE_W, PADDLE_H);
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = "bold 32px 'Segoe UI', sans-serif";
+      ctx.textAlign = 'right';
+      ctx.fillStyle = player.color;
+      ctx.fillText(player.score, canvas.width / 2 - 30, 45);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = ai.color;
+      ctx.fillText(ai.score, canvas.width / 2 + 30, 45);
+
+      ctx.textAlign = 'center';
+      ctx.font = "15px 'Segoe UI', sans-serif";
+      ctx.fillStyle = paused || gameOver ? '#ffd60a' : 'rgba(255,255,255,0.75)';
+      ctx.fillText(message, canvas.width / 2, canvas.height - 18);
+      ctx.textAlign = 'left';
+
+      if (paused) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = "bold 26px 'Segoe UI', sans-serif";
+        ctx.fillText('Paused', canvas.width / 2, canvas.height / 2);
+        ctx.textAlign = 'left';
+      }
     }
 
-    // Controls
-    window.addEventListener("keydown", (e) => {
-  if (["ArrowUp", "ArrowDown"].includes(e.key)) {
-    e.preventDefault(); // 🛑 Prevent page scroll
-    if (e.key === "ArrowUp") upArrow = true;
-    if (e.key === "ArrowDown") downArrow = true;
-  }
-});
+    function frame(time) {
+      update(time);
+      draw();
+      requestAnimationFrame(frame);
+    }
 
+    const moveKeys = ['ArrowUp', 'ArrowDown', 'w', 's', 'W', 'S'];
 
-  window.addEventListener("keyup", (e) => {
-  if (["ArrowUp", "ArrowDown"].includes(e.key)) {
-    e.preventDefault(); // 🛑 Prevent scroll on key release too
-    if (e.key === "ArrowUp") upArrow = false;
-    if (e.key === "ArrowDown") downArrow = false;
-  }
-});
+    window.addEventListener('keydown', (e) => {
+      if (moveKeys.includes(e.key)) {
+        e.preventDefault();
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        if (gameOver) {
+          reset();
+        } else {
+          paused = !paused;
+        }
+      }
+    });
 
-    gameLoop();
+    window.addEventListener('keyup', (e) => {
+      if (moveKeys.includes(e.key)) {
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = false;
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = false;
+      }
+    });
+
+    reset();
+    requestAnimationFrame(frame);
   </script>
 </body>
 </html>

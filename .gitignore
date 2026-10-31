@@ -16,6 +16,8 @@ node_modules/
 # Logs
 *.log
 
-# Local tooling state
+# agents
 .freebuff/
 .cloud-attachments/
+
+
