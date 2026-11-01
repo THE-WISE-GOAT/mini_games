@@ -198,6 +198,7 @@
 
       card.classList.add('flipped');
       card.textContent = card.dataset.emoji;
+      card.setAttribute('aria-label', `Revealed card ${card.dataset.emoji}`);
       selected.push(card);
 
       if (selected.length < 2) return;
@@ -211,6 +212,8 @@
         second.classList.remove('flipped');
         first.classList.add('matched');
         second.classList.add('matched');
+        first.setAttribute('aria-label', `Matched card ${first.dataset.emoji}`);
+        second.setAttribute('aria-label', `Matched card ${second.dataset.emoji}`);
         selected = [];
         matched++;
 
@@ -226,6 +229,8 @@
           second.classList.remove('flipped');
           first.textContent = first.dataset.emoji;
           second.textContent = second.dataset.emoji;
+          first.setAttribute('aria-label', 'Hidden card');
+          second.setAttribute('aria-label', 'Hidden card');
           selected = [];
           locked = false;
         }, 800)
