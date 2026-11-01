@@ -106,11 +106,13 @@
 
     @media (max-width: 420px) {
       .game-board {
-        grid-template-columns: repeat(4, 72px);
+        width: 100%;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
       .card {
-        width: 72px;
-        height: 72px;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
         font-size: 32px;
       }
     }
