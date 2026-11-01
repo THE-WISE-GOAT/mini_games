@@ -219,13 +219,14 @@
       } else {
         locked = true;
         setTimeout(() => {
+          if (!board.contains(first) || !board.contains(second)) return;
           first.classList.remove('flipped');
           second.classList.remove('flipped');
           first.textContent = first.dataset.emoji;
           second.textContent = second.dataset.emoji;
           selected = [];
           locked = false;
-        }, 800);
+        }, 800)
       }
     }
 
