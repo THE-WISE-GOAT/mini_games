@@ -1,121 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
-  <title>Catch the Square!</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catch the Square</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      padding: 0;
+      min-height: 100vh;
+      background: #111;
+      color: #fff;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #111;
-      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
       text-align: center;
     }
 
     h1 {
-      margin-top: 30px;
+      margin: 0 0 12px;
+      font-size: 1.6rem;
+    }
+
+    .hud {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 16px;
+      color: #999;
+    }
+
+    .hud strong {
+      color: #ffd60a;
+      font-weight: 600;
     }
 
     #gameArea {
       position: relative;
-      width: 600px;
-      height: 400px;
-      margin: 30px auto;
-      background-color: #222;
-      border: 3px solid #fff;
-      overflow: hidden;
+      width: min(100%, 600px);
+      height: min(60vh, 400px);
+      background: #1d1d1d;
+      border: 2px solid #333;
       border-radius: 12px;
+      overflow: hidden;
     }
 
     #square {
       position: absolute;
-      width: 50px;
-      height: 50px;
-      background-color: #e91e63;
+      width: 52px;
+      height: 52px;
+      background: #e91e63;
+      border: none;
       border-radius: 6px;
       cursor: pointer;
-      transition: all 0.1s ease-in-out;
+      transition: left 0.08s ease-in-out, top 0.08s ease-in-out;
+      padding: 0;
     }
 
-    #score {
-      font-size: 20px;
-      margin-top: 10px;
+    #square:disabled {
+      cursor: default;
+      opacity: 0.3;
+    }
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+    }
+
+    #overlay[hidden] {
+      display: none;
+    }
+
+    #overlay .title {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    #overlay .detail {
+      color: #bbb;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
 
     #startBtn {
-      padding: 10px 20px;
-      font-size: 18px;
-      margin-top: 20px;
+      padding: 10px 26px;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
-      background-color: #4caf50;
-      color: white;
+      background: #4caf50;
+      color: #fff;
       border: none;
       border-radius: 8px;
     }
 
-    #startBtn:hover {
-      background-color: #45a049;
+    #startBtn:hover:not(:disabled) {
+      background: #43a047;
+    }
+
+    #startBtn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .hint {
+      margin-top: 14px;
+      color: #777;
+      font-size: 0.85rem;
     }
   </style>
 </head>
 <body>
+  <h1>Catch the Square</h1>
 
-  <h1>🎯 Catch the Square!</h1>
-  <div id="score">Score: 0</div>
-  <button id="startBtn">Start Game</button>
-  <div id="gameArea">
-    <div id="square" style="display:none;"></div>
+  <div class="hud">
+    <span>Score: <strong id="score">0</strong></span>
+    <span>Time: <strong id="time">30</strong></span>
+    <span>Best: <strong id="best">0</strong></span>
   </div>
 
+  <div id="gameArea">
+    <button id="square" type="button" aria-label="Target square" hidden></button>
+    <div id="overlay">
+      <div class="title">Ready?</div>
+      <div class="detail">Click the square as many times as you can in 30 seconds.</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="startBtn" type="button">Start Game</button>
+  </div>
+
+  <p class="hint">The square jumps faster as your score climbs.</p>
+
   <script>
+    const ROUND_SECONDS = 30;
+    const MIN_DELAY = 260;
+    const MAX_DELAY = 1000;
+
     const square = document.getElementById('square');
-    const scoreDisplay = document.getElementById('score');
+    const area = document.getElementById('gameArea');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
+    const bestEl = document.getElementById('best');
+    const overlay = document.getElementById('overlay');
     const startBtn = document.getElementById('startBtn');
-    const gameArea = document.getElementById('gameArea');
 
     let score = 0;
-    let gameInterval;
+    let timeLeft = ROUND_SECONDS;
+    let running = false;
+    let moveTimer = null;
+    let clockTimer = null;
+    let best = 0;
+
+    try {
+      best = Number(localStorage.getItem('catch-square-best')) || 0;
+    } catch (e) {
+      best = 0;
+    }
+    bestEl.textContent = best;
 
     function moveSquare() {
-      const areaWidth = gameArea.clientWidth - 50;
-      const areaHeight = gameArea.clientHeight - 50;
-      const x = Math.random() * areaWidth;
-      const y = Math.random() * areaHeight;
-
+      const size = square.offsetWidth || 52;
+      const x = Math.random() * Math.max(1, area.clientWidth - size);
+      const y = Math.random() * Math.max(1, area.clientHeight - size);
       square.style.left = x + 'px';
       square.style.top = y + 'px';
     }
 
-    function startGame() {
-      score = 0;
-      scoreDisplay.textContent = 'Score: 0';
-      square.style.display = 'block';
-      startBtn.disabled = true;
-      startBtn.textContent = 'Game Running...';
-
-      moveSquare();
-      gameInterval = setInterval(() => {
+    function scheduleMove() {
+      const delay = Math.max(MIN_DELAY, MAX_DELAY - score * 30);
+      clearTimeout(moveTimer);
+      moveTimer = setTimeout(() => {
+        if (!running) return;
         moveSquare();
-      }, 1000);
+        scheduleMove();
+      }, delay);
+    }
 
-      setTimeout(() => {
-        clearInterval(gameInterval);
-        square.style.display = 'none';
-        startBtn.disabled = false;
-        startBtn.textContent = 'Start Game';
-        alert('⏰ Time\'s up! Your score: ' + score);
-      }, 30000); // 30 seconds
+    function showOverlay(title, detail) {
+      overlay.querySelector('.title').textContent = title;
+      overlay.querySelector('.detail').textContent = detail;
+      overlay.hidden = false;
+    }
+
+    function endGame() {
+      running = false;
+      clearTimeout(moveTimer);
+      clearInterval(clockTimer);
+      square.hidden = true;
+      startBtn.disabled = false;
+      startBtn.textContent = 'Play Again';
+
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+        try {
+          localStorage.setItem('catch-square-best', String(best));
+        } catch (e) {
+          // storage unavailable
+        }
+        showOverlay('Time\'s up!', `New best: ${score} clicks.`);
+      } else {
+        showOverlay('Time\'s up!', `You caught ${score}. Best is still ${best}.`);
+      }
+    }
+
+    function startGame() {
+      if (running) return;
+
+      score = 0;
+      timeLeft = ROUND_SECONDS;
+      running = true;
+      scoreEl.textContent = '0';
+      timeEl.textContent = String(ROUND_SECONDS);
+      overlay.hidden = true;
+      startBtn.disabled = true;
+      startBtn.textContent = 'Running…';
+      square.hidden = false;
+      moveSquare();
+      scheduleMove();
+
+      clockTimer = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = String(timeLeft);
+        if (timeLeft <= 0) endGame();
+      }, 1000);
     }
 
     square.addEventListener('click', () => {
+      if (!running) return;
       score++;
-      scoreDisplay.textContent = 'Score: ' + score;
+      scoreEl.textContent = String(score);
       moveSquare();
+      scheduleMove();
     });
 
     startBtn.addEventListener('click', startGame);
   </script>
-
 </body>
 </html>
