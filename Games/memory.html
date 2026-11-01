@@ -1,133 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Memory Match</title>
   <style>
     body {
-      background-color: #1e1e1e;
-      color: #fff;
-      font-family: sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background: #161616;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: 0;
-      padding: 20px;
+      padding: 24px 16px;
     }
 
     h1 {
-      margin-bottom: 20px;
+      margin: 0 0 14px;
+      font-size: 1.6rem;
+    }
+
+    .hud {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 18px;
+      color: #999;
+    }
+
+    .hud strong {
+      color: #00cec9;
+      font-weight: 600;
     }
 
     .game-board {
       display: grid;
-      grid-template-columns: repeat(4, 100px);
-      gap: 15px;
+      grid-template-columns: repeat(4, 92px);
+      gap: 12px;
     }
 
     .card {
-      width: 100px;
-      height: 100px;
-      background-color: #444;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      cursor: pointer;
+      width: 92px;
+      height: 92px;
+      border: none;
       border-radius: 10px;
+      background: #333;
+      color: transparent;
+      font-size: 40px;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
       user-select: none;
-      transition: transform 0.3s;
     }
 
-    .card.flipped {
-      background-color: #fff;
-      color: #000;
+    .card:hover:not(.matched) {
+      transform: translateY(-2px);
+      background: #3d3d3d;
+    }
+
+    .card.flipped,
+    .card.matched {
+      background: #fff;
+      color: inherit;
     }
 
     .card.matched {
-      background-color: #00b894;
-      color: #fff;
+      background: #00b894;
       cursor: default;
+      animation: pop 0.25s ease;
+    }
+
+    @keyframes pop {
+      50% { transform: scale(1.08); }
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      align-items: center;
     }
 
     .restart-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
+      padding: 10px 22px;
+      font-size: 1rem;
       border: none;
-      background-color: #00cec9;
-      color: #000;
-      border-radius: 5px;
+      border-radius: 6px;
+      background: #00cec9;
+      color: #10333a;
+      font-weight: 600;
       cursor: pointer;
     }
 
     .restart-btn:hover {
-      background-color: #00b894;
+      background: #00b894;
+    }
+
+    #result {
+      min-height: 24px;
+      margin-top: 14px;
+      color: #ffd60a;
+      font-size: 1.05rem;
+    }
+
+    @media (max-width: 420px) {
+      .game-board {
+        grid-template-columns: repeat(4, 72px);
+      }
+      .card {
+        width: 72px;
+        height: 72px;
+        font-size: 32px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>🧠 Memory Match</h1>
+  <h1>Memory Match</h1>
+
+  <div class="hud">
+    <span>Moves: <strong id="moves">0</strong></span>
+    <span>Pairs: <strong id="pairs">0</strong>/8</span>
+    <span>Time: <strong id="time">0s</strong></span>
+  </div>
+
   <div class="game-board" id="gameBoard"></div>
-  <button class="restart-btn" onclick="startGame()">Restart</button>
+
+  <div class="controls">
+    <button class="restart-btn" id="restartBtn" type="button">Restart</button>
+  </div>
+  <div id="result"></div>
 
   <script>
-    const emojis = ['🍎', '🍌', '🍒', '🍇', '🍉', '🍓', '🍍', '🥝'];
-    let selected = [];
-    let matchedCount = 0;
+    const EMOJIS = ['🍎', '🍌', '🍒', '🍇', '🍉', '🍓', '🍍', '🥝'];
 
-    function shuffle(array) {
-      return array.sort(() => 0.5 - Math.random());
+    const board = document.getElementById('gameBoard');
+    const movesEl = document.getElementById('moves');
+    const pairsEl = document.getElementById('pairs');
+    const timeEl = document.getElementById('time');
+    const resultEl = document.getElementById('result');
+
+    let selected = [];
+    let moves = 0;
+    let matched = 0;
+    let seconds = 0;
+    let timerId = null;
+    let locked = false;
+
+    function shuffle(items) {
+      const array = items.slice();
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
     }
 
     function startGame() {
-      const board = document.getElementById('gameBoard');
+      stopTimer();
       board.innerHTML = '';
-      matchedCount = 0;
       selected = [];
+      moves = 0;
+      matched = 0;
+      seconds = 0;
+      locked = false;
+      resultEl.textContent = '';
+      updateHud();
 
-      const cards = shuffle([...emojis, ...emojis]);
+      timerId = setInterval(() => {
+        seconds++;
+        timeEl.textContent = seconds + 's';
+      }, 1000);
 
-      cards.forEach((emoji, index) => {
-        const card = document.createElement('div');
-        card.classList.add('card');
+      shuffle([...EMOJIS, ...EMOJIS]).forEach((emoji) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'card';
         card.dataset.emoji = emoji;
-        card.dataset.index = index;
-        card.textContent = '';
-        card.addEventListener('click', flipCard);
+        card.textContent = emoji;
+        card.setAttribute('aria-label', 'Hidden card');
+        card.addEventListener('click', () => flip(card));
         board.appendChild(card);
       });
     }
 
-    function flipCard(e) {
-      const card = e.target;
-      if (card.classList.contains('flipped') || card.classList.contains('matched') || selected.length === 2) return;
+    function flip(card) {
+      if (locked || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      if (selected.includes(card)) return;
 
       card.classList.add('flipped');
       card.textContent = card.dataset.emoji;
       selected.push(card);
 
-      if (selected.length === 2) {
-        const [card1, card2] = selected;
-        if (card1.dataset.emoji === card2.dataset.emoji) {
-          card1.classList.add('matched');
-          card2.classList.add('matched');
-          matchedCount += 1;
-          selected = [];
-          if (matchedCount === emojis.length) {
-            setTimeout(() => alert('🎉 You matched all cards!'), 300);
-          }
-        } else {
-          setTimeout(() => {
-            card1.classList.remove('flipped');
-            card2.classList.remove('flipped');
-            card1.textContent = '';
-            card2.textContent = '';
-            selected = [];
-          }, 800);
+      if (selected.length < 2) return;
+
+      moves++;
+      updateHud();
+      const [first, second] = selected;
+
+      if (first.dataset.emoji === second.dataset.emoji) {
+        first.classList.remove('flipped');
+        second.classList.remove('flipped');
+        first.classList.add('matched');
+        second.classList.add('matched');
+        selected = [];
+        matched++;
+
+        if (matched === EMOJIS.length) {
+          stopTimer();
+          resultEl.textContent = `Cleared in ${moves} moves and ${seconds}s`;
         }
+      } else {
+        locked = true;
+        setTimeout(() => {
+          first.classList.remove('flipped');
+          second.classList.remove('flipped');
+          first.textContent = first.dataset.emoji;
+          second.textContent = second.dataset.emoji;
+          selected = [];
+          locked = false;
+        }, 800);
       }
     }
+
+    function updateHud() {
+      movesEl.textContent = moves;
+      pairsEl.textContent = matched;
+      timeEl.textContent = seconds + 's';
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', startGame);
 
     startGame();
   </script>
