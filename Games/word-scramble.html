@@ -219,8 +219,7 @@
         }
 
         function checkGuess() {
-if (locked) return;
-            }
+            if (locked) return;
 
             const guess = inputEl.value.trim().toLowerCase();
             if (!guess) return;
@@ -243,10 +242,7 @@ if (locked) return;
         }
 
         function skipWord() {
-            if (locked) {
-                nextWord();
-                return;
-            }
+            if (locked) return;
             locked = true;
             streak = 0;
             streakEl.textContent = streak;
