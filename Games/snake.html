@@ -144,6 +144,10 @@
     }
 
     function dropFruit() {
+      if (snake.length >= TILES * TILES) {
+        over = true;
+        return;
+      }
       do {
         fruit = {
           x: Math.floor(Math.random() * TILES),
