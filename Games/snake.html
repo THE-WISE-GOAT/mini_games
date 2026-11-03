@@ -1,441 +1,300 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Snake Game</title>
-	<link rel="stylesheet" href="style.css">
+  <title>Snake</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0d0d0d;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+    }
+
+    .hud {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 14px;
+      color: #999;
+    }
+
+    .hud strong {
+      color: #ffd60a;
+      font-weight: 600;
+    }
+
+    #board {
+      width: min(90vw, 440px);
+      aspect-ratio: 1;
+      background: #161616;
+      border: 2px solid #2e2e2e;
+      border-radius: 8px;
+    }
+
+    .keys {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(2, 64px);
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .arr {
+      font-size: 26px;
+      line-height: 1;
+      background: #1f1f1f;
+      color: #ffd60a;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.1s linear;
+    }
+
+    .arr:active {
+      background: #000;
+    }
+
+    .arr.up    { grid-column: 2; grid-row: 1; }
+    .arr.left  { grid-column: 1; grid-row: 2; }
+    .arr.down  { grid-column: 2; grid-row: 2; }
+    .arr.right { grid-column: 3; grid-row: 2; }
+
+    .hint {
+      margin-top: 16px;
+      color: #777;
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
-<style>
-	body {
-  margin: 90px;
-  background-color: black;
-  color: white;
-}
-
-.game-canvas {
-  width: 100%;
-  height: 100vw;
-  max-width: 500px;
-  max-height:500px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.keys {
-  font-family: 'Lato', sans-serif;
-  text-align: center;
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  height: 200px;
-  margin: auto;
-}
-
-.up {
-  position: relative;
-  top: -4px;
-}
-
-.chevron::before {
-  border-style: solid;
-  border-width: 8px 8px 0 0;
-  content: '';
-  display: inline-block;
-  height: 20px;
-  width: 20px;
-  top: -10px;
-  position: relative;
-  transform: rotate(-45deg);
-}
-
-.chevron.down::before {
-  transform: rotate(135deg);
-  top: -22px;
-}
-
-.chevron.right::before {
-  transform: rotate(45deg);
-  top: -18px;
-  left: -5px;
-}
-
-.chevron.left::before {
-  transform: rotate(225deg);
-  top: -18px;
-  left: 5px;
-}
-
-.arr {
-  cursor: pointer;
-  width: 70px;
-  height: 70px;
-  text-align: center;
-  line-height: 100px;
-  background: rgb(48, 48, 48);
-  color: rgb(255, 230, 0);
-  font-size: 50px;
-  border-radius: 20px;
-  border-right: 10px solid #00000000;
-  border-bottom: 10px solid #00000000;
-  border-left: 10px solid #00000000;
-  border-top: 10px solid #00000000;
-  display: inline-block;
-  margin: 5px;
-  transition: all .05s linear;
-  user-select: none;
-}
-
-.arr:active {
-  background: #000000;
-}
-
-#game-container {
-  display: flex;
-  flex-direction: column;
-  background-color: rgb(0, 0, 0);
-}
-
-</style>
 <body>
-	<div id="game-container">
-		<canvas id="gc" class="game-canvas" width="400" height="400"></canvas>
-	</div>
-	<div class="keys">
-	  <a class="up arr" onclick="Snake.action('up')">
-	    <i class="chevron up"></i></a>
-	  <br />
-	  <a class="left arr" onclick="Snake.action('left')">
-	    <i class="chevron left"></i></a>
-	  <a class="down arr" onclick="Snake.action('down')">
-	    <i class="chevron down"></i></a>
-	  <a class="right arr" onclick="Snake.action('right')">
-	    <i class="chevron right"></i></a>
-	</div>
-	<script>
-		var Snake = (function () {
+  <h1>Snake</h1>
 
-const INITIAL_TAIL = 4;
-var fixedTail = false;  // Changed to allow the snake to grow
+  <div class="hud">
+    <span>Score: <strong id="score">0</strong></span>
+    <span>Best: <strong id="best">0</strong></span>
+  </div>
 
-var intervalID;
+  <canvas id="board" width="400" height="400"></canvas>
 
-var tileCount = 10;
-var gridSize = 400 / tileCount;
+  <div class="keys">
+    <button class="arr up" type="button" aria-label="Up">&#9650;</button>
+    <button class="arr left" type="button" aria-label="Left">&#9664;</button>
+    <button class="arr down" type="button" aria-label="Down">&#9660;</button>
+    <button class="arr right" type="button" aria-label="Right">&#9654;</button>
+  </div>
 
-const INITIAL_PLAYER = { x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2) };
+  <p class="hint">Arrow keys or WASD to steer &middot; Space to pause &middot; Esc to restart</p>
 
-var velocity = { x: 0, y: 0 };
-var player = { x: INITIAL_PLAYER.x, y: INITIAL_PLAYER.y };
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
 
-var walls = false;
+    const TILES = 20;
+    const CELL = canvas.width / TILES;
+    const STEP_MS = 100;
 
-var fruit = { x: 1, y: 1 };
+    const DIRS = {
+      up: { x: 0, y: -1 },
+      down: { x: 0, y: 1 },
+      left: { x: -1, y: 0 },
+      right: { x: 1, y: 0 }
+    };
+    const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
-var trail = [];
-var tail = INITIAL_TAIL;
+    let snake, dir, dirQueue, fruit, score, paused, over, acc, lastTime;
 
-var reward = 0;
-var points = 0;
-var pointsMax = 0;
+    let best = 0;
+    try {
+      best = Number(localStorage.getItem('snake-best')) || 0;
+    } catch (e) {
+      best = 0;
+    }
+    bestEl.textContent = best;
 
-var ActionEnum = { 'none': 0, 'up': 1, 'down': 2, 'left': 3, 'right': 4 };
-Object.freeze(ActionEnum);
-var lastAction = ActionEnum.none;
+    function reset() {
+      snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+      dir = 'right';
+      dirQueue = [];
+      score = 0;
+      paused = false;
+      over = false;
+      acc = 0;
+      lastTime = performance.now();
+      dropFruit();
+      updateHud();
+    }
 
-function setup() {
-  canv = document.getElementById('gc');
-  ctx = canv.getContext('2d');
+    function dropFruit() {
+      if (snake.length >= TILES * TILES) {
+        over = true;
+        return;
+      }
+      do {
+        fruit = {
+          x: Math.floor(Math.random() * TILES),
+          y: Math.floor(Math.random() * TILES)
+        };
+      } while (snake.some((s) => s.x === fruit.x && s.y === fruit.y));
+    }
 
-  game.reset();
-}
+    function setDirection(name) {
+      if (over) reset();
+      const lastQueued = dirQueue.length ? dirQueue[dirQueue.length - 1] : dir;
+      if (name === lastQueued || name === OPPOSITE[lastQueued]) return;
+      if (dirQueue.length < 2) dirQueue.push(name);
+      if (paused) paused = false;
+    }
 
-var game = {
+    function step() {
+      if (dirQueue.length) dir = dirQueue.shift();
 
-  reset: function () {
-	ctx.fillStyle = 'grey'; //game ko bogy color
-	ctx.fillRect(0, 0, canv.width, canv.height);
+      const head = { x: snake[0].x + DIRS[dir].x, y: snake[0].y + DIRS[dir].y };
 
-	tail = INITIAL_TAIL;
-	points = 0;
-	velocity.x = 0;
-	velocity.y = 0;
-	player.x = INITIAL_PLAYER.x;
-	player.y = INITIAL_PLAYER.y;
-	reward = -1;
+      head.x = (head.x + TILES) % TILES;
+      head.y = (head.y + TILES) % TILES;
 
-	lastAction = ActionEnum.none;
+      if (snake.some((s) => s.x === head.x && s.y === head.y)) {
+        over = true;
+        return;
+      }
 
-	trail = []; 
-	trail.push({ x: player.x, y: player.y });
-  },
+      snake.unshift(head);
 
-  action: {
-	up: function () {
-	  if (lastAction != ActionEnum.down) {
-		velocity.x = 0;
-		velocity.y = -1;
-	  }
-	},
-	down: function () {
-	  if (lastAction != ActionEnum.up) {
-		velocity.x = 0;
-		velocity.y = 1;
-	  }
-	},
-	left: function () {
-	  if (lastAction != ActionEnum.right) {
-		velocity.x = -1;
-		velocity.y = 0;
-	  }
-	},
-	right: function () {
-	  if (lastAction != ActionEnum.left) {
-		velocity.x = 1;
-		velocity.y = 0;
-	  }
-	}
-  },
+      if (head.x === fruit.x && head.y === fruit.y) {
+        score++;
+        if (score > best) {
+          best = score;
+          try {
+            localStorage.setItem('snake-best', String(best));
+          } catch (e) {
+            // storage unavailable (private mode, file:// in some browsers)
+          }
+        }
+        updateHud();
+        if (snake.length === TILES * TILES) {
+          over = true;
+          return;
+        }
+        dropFruit();
+      } else {
+        snake.pop();
+      }
+    }
 
-  RandomFruit: function () {
-	if (walls) {
-	  fruit.x = 1 + Math.floor(Math.random() * (tileCount - 2));
-	  fruit.y = 1 + Math.floor(Math.random() * (tileCount - 2));
-	} else {
-	  fruit.x = Math.floor(Math.random() * tileCount);
-	  fruit.y = Math.floor(Math.random() * tileCount);
-	}
-  },
+    function updateHud() {
+      scoreEl.textContent = score;
+      bestEl.textContent = best;
+    }
 
-  log: function () {
-	console.log('====================');
-	console.log('x:' + player.x + ', y:' + player.y);
-	console.log('tail:' + tail + ', trail.length:' + trail.length);
-  },
+    function cellRect(x, y, inset) {
+      return [x * CELL + inset, y * CELL + inset, CELL - inset * 2, CELL - inset * 2];
+    }
 
-  loop: function () {
+    function draw() {
+      ctx.fillStyle = '#161616';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-	reward = -0.1;
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < TILES; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * CELL, 0);
+        ctx.lineTo(i * CELL, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * CELL);
+        ctx.lineTo(canvas.width, i * CELL);
+        ctx.stroke();
+      }
 
-	function DontHitWall() {
-	  if (player.x < 0) player.x = tileCount - 1;
-	  if (player.x >= tileCount) player.x = 0;
-	  if (player.y < 0) player.y = tileCount - 1;
-	  if (player.y >= tileCount) player.y = 0;
-	}
+      ctx.fillStyle = '#ff7a1a';
+      ctx.beginPath();
+      ctx.arc(fruit.x * CELL + CELL / 2, fruit.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
+      ctx.fill();
 
-	function HitWall() {
-	  if (player.x < 1) game.reset();
-	  if (player.x > tileCount - 2) game.reset();
-	  if (player.y < 1) game.reset();
-	  if (player.y > tileCount - 2) game.reset();
+      snake.forEach((segment, i) => {
+        ctx.fillStyle = i === 0 ? '#8be9fd' : '#4aa3df';
+        const [x, y, w, h] = cellRect(segment.x, segment.y, 1.5);
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 5);
+        ctx.fill();
+      });
 
-	  ctx.fillStyle = 'grey';
-	  ctx.fillRect(0, 0, gridSize - 1, canv.height);
-	  ctx.fillRect(0, 0, canv.width, gridSize - 1);
-	  ctx.fillRect(canv.width - gridSize + 1, 0, gridSize, canv.height);
-	  ctx.fillRect(0, canv.height - gridSize + 1, canv.width, gridSize);
-	}
+      if (over || paused) {
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = "bold 26px 'Segoe UI', sans-serif";
+        ctx.fillText(over ? 'Game over' : 'Paused', canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillStyle = '#aaa';
+        ctx.font = "16px 'Segoe UI', sans-serif";
+        ctx.fillText(over ? 'Press Esc or tap a direction to restart' : 'Press Space to resume', canvas.width / 2, canvas.height / 2 + 22);
+        ctx.textAlign = 'left';
+      }
+    }
 
-	var stopped = velocity.x == 0 && velocity.y == 0;
+    function frame(time) {
+      const delta = time - lastTime;
+      lastTime = time;
 
-	player.x += velocity.x;
-	player.y += velocity.y;
+      if (!paused && !over) {
+        acc += delta;
+        while (acc >= STEP_MS) {
+          step();
+          acc -= STEP_MS;
+        }
+      }
 
-	if (velocity.x == 0 && velocity.y == -1) lastAction = ActionEnum.up;
-	if (velocity.x == 0 && velocity.y == 1) lastAction = ActionEnum.down;
-	if (velocity.x == -1 && velocity.y == 0) lastAction = ActionEnum.left;
-	if (velocity.x == 1 && velocity.y == 0) lastAction = ActionEnum.right;
+      draw();
+      requestAnimationFrame(frame);
+    }
 
-	ctx.fillStyle = 'rgba(40,40,40,0.8)';
-	ctx.fillRect(0, 0, canv.width, canv.height);
+    const keyMap = {
+      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      w: 'up', s: 'down', a: 'left', d: 'right',
+      W: 'up', S: 'down', A: 'left', D: 'right'
+    };
 
-	if (walls) HitWall();
-	else DontHitWall();
+    document.addEventListener('keydown', (e) => {
+      if (keyMap[e.key]) {
+        e.preventDefault();
+        setDirection(keyMap[e.key]);
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        if (!over) paused = !paused;
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        reset();
+      }
+    });
 
-	if (!stopped) {
-	  trail.push({ x: player.x, y: player.y });
-	  while (trail.length > tail) trail.shift();
-	}
+    document.querySelector('.arr.up').addEventListener('click', () => setDirection('up'));
+    document.querySelector('.arr.down').addEventListener('click', () => setDirection('down'));
+    document.querySelector('.arr.left').addEventListener('click', () => setDirection('left'));
+    document.querySelector('.arr.right').addEventListener('click', () => setDirection('right'));
 
-	if (!stopped) {
-	  ctx.fillStyle = 'rgba(200,200,200,0.2)';
-	  ctx.font = "small-caps 14px Helvetica";
-	  ctx.fillText("(esc) reset", 24, 356);
-	  ctx.fillText("(space) pause", 24, 374);
-	}
-
-	ctx.fillStyle = 'skyblue';  // Changed color of the snake 
-	for (var i = 0; i < trail.length - 1; i++) {
-	  ctx.beginPath();
-	  ctx.arc(trail[i].x * gridSize + gridSize / 2, trail[i].y * gridSize + gridSize / 2, gridSize / 2 - 1, 0, 2 * Math.PI);
-	  ctx.fill();
-	  ctx.closePath();
-
-	  if (!stopped && trail[i].x == player.x && trail[i].y == player.y) {
-		game.reset();
-	  }
-	}
-
-	ctx.fillStyle = 'lightblue';
-	ctx.beginPath();
-	ctx.arc(trail[trail.length - 1].x * gridSize + gridSize / 2, trail[trail.length - 1].y * gridSize + gridSize / 2, gridSize / 2 - 1, 0, 2 * Math.PI);
-	ctx.fill();
-	ctx.closePath();
-
-	if (player.x == fruit.x && player.y == fruit.y) {
-	  if (!fixedTail) tail++;
-	  points++;
-	  if (points > pointsMax) pointsMax = points;
-	  reward = 1;
-	  game.RandomFruit();
-	  while ((function () {
-		for (var i = 0; i < trail.length; i++) {
-		  if (trail[i].x == fruit.x && trail[i].y == fruit.y) {
-			game.RandomFruit();
-			return true;
-		  }
-		}
-		return false;
-		
-	  })());
-	}
-
-	ctx.fillStyle = 'orange';  // Changed color of the fruit to orange
-	ctx.beginPath();
-	ctx.arc(fruit.x * gridSize + gridSize / 2, fruit.y * gridSize + gridSize / 2, gridSize / 2 - 1, 0, 2 * Math.PI);
-	ctx.fill();
-	ctx.closePath();
-
-	if (stopped) {
-	  ctx.fillStyle = 'rgba(250,250,250,0.8)';
-	  ctx.font = "small-caps 16px 'Comic Sans MS', cursive";
-	  ctx.fillText("press ARROW KEYS to START...", 24, 374);
-	}
-
-	ctx.fillStyle = 'white';
-	ctx.font = "small-caps 16px 'Comic Sans MS', cursive";
-	ctx.fillText("Points: " + points, 288, 40);
-	ctx.fillText("Highest: " + pointsMax, 292, 60);
-
-	return reward;
-  }
-}
-
-function keyPush(evt) {
-  switch (evt.keyCode) {
-	case 37: // left
-	  game.action.left();
-	  evt.preventDefault();
-	  break;
-
-	case 38: // up
-	  game.action.up();
-	  evt.preventDefault();
-	  break;
-
-	case 39: // right
-	  game.action.right();
-	  evt.preventDefault();
-	  break;
-
-	case 40: // down
-	  game.action.down();
-	  evt.preventDefault();
-	  break;
-
-	case 32: // space
-	  Snake.pause();
-	  evt.preventDefault();
-	  break;
-
-	case 27: // esc
-	  game.reset();
-	  evt.preventDefault();
-	  break;
-  }
-}
-
-return {
-  start: function (fps = 15) {
-	window.onload = setup;
-	intervalID = setInterval(game.loop, 1000 / fps);
-  },
-
-  loop: game.loop,
-
-  reset: game.reset,
-
-  stop: function () {
-	clearInterval(intervalID);
-  },
-
-  setup: {
-	keyboard: function (state) {
-	  if (state) {
-		document.addEventListener('keydown', keyPush);
-	  } else {
-		document.removeEventListener('keydown', keyPush);
-	  }
-	},
-	wall: function (state) {
-	  walls = state;
-	},
-	tileCount: function (size) {
-	  tileCount = size;
-	  gridSize = 400 / tileCount;
-	},
-	fixedTail: function (state) {
-	  fixedTail = state;
-	}
-  },
-
-  action: function (act) {
-	switch (act) {
-	  case 'left':
-		game.action.left();
-		break;
-
-	  case 'up':
-		game.action.up();
-		break;
-
-	  case 'right':
-		game.action.right();
-		break;
-
-	  case 'down':
-		game.action.down();
-		break;
-	}
-  },
-
-  pause: function () {
-	velocity.x = 0;
-	velocity.y = 0;
-  },
-
-  clearTopScore: function () {
-	pointsMax = 0;
-  },
-
-  random: {
-	int: function (a, b) {
-	  return Math.floor(Math.random() * (b - a + 1)) + a;
-	},
-	action: function () {
-	  var a = Object.keys(ActionEnum);
-	  return a[Snake.random.int(1, a.length - 1)];
-	}
-  }
-}
-})();
-
-Snake.start();
-Snake.setup.keyboard(true);
-Snake.setup.wall(false);
-Snake.setup.tileCount(20);
-
-	</script>
+    reset();
+    requestAnimationFrame(frame);
+  </script>
 </body>
 </html>
