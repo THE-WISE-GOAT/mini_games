@@ -2,90 +2,268 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Word Scramble</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             background: #111;
             color: #fff;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 16px;
         }
+
         .container {
-            background: #222;
+            background: #1c1c1c;
             padding: 30px;
-            border-radius: 8px;
+            border-radius: 10px;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+            width: min(92vw, 420px);
         }
-        .scrambled {
-            font-size: 32px;
-            letter-spacing: 5px;
-            color: #f1c40f;
+
+        h1 {
+            margin: 0 0 6px;
+            font-size: 1.5rem;
+        }
+
+        .hud {
+            color: #999;
+            font-size: 0.9rem;
             margin-bottom: 20px;
         }
-        input {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 4px;
-            border: none;
-            margin-bottom: 10px;
-            width: 80%;
+
+        .hud strong {
+            color: #f1c40f;
         }
-        button {
+
+        .category {
+            color: #888;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .scrambled {
+            font-size: 34px;
+            letter-spacing: 6px;
+            color: #f1c40f;
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+
+        #userInput {
+            padding: 11px 12px;
+            font-size: 1rem;
+            border: 1px solid #333;
+            border-radius: 6px;
+            width: 100%;
+            margin-bottom: 14px;
+            background: #111;
+            color: #fff;
+            text-align: center;
+        }
+
+        #userInput:focus {
+            outline: 2px solid #3498db;
+            border-color: transparent;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .buttons button {
             padding: 10px 20px;
-            background: #3498db;
-            color: white;
+            font-size: 0.95rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
+        }
+
+        #checkBtn {
+            background: #3498db;
+            color: #fff;
+        }
+
+        #checkBtn:hover {
+            background: #2c80c0;
+        }
+
+        #skipBtn {
+            background: #e67e22;
+            color: #fff;
+        }
+
+        #skipBtn:hover {
+            background: #c96f1b;
+        }
+
+        #msg {
+            min-height: 44px;
+            margin: 18px 0 0;
+            font-size: 1rem;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Word Scramble</h1>
-        <div class="scrambled" id="scrambledWord">👉 WORD</div>
-        <input type="text" id="userInput" placeholder="Guess the correct word">
-        <br>
-        <button onclick="checkGuess()">Check Word</button>
-        <button onclick="nextWord()" style="background:#e67e22">Skip</button>
-        <h3 id="msg"></h3>
+        <div class="hud">Solved: <strong id="solved">0</strong> &middot; Streak: <strong id="streak">0</strong></div>
+
+        <div class="category" id="category">Word</div>
+        <div class="scrambled" id="scrambledWord">—</div>
+
+        <input type="text" id="userInput" placeholder="Type the word" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <div class="buttons">
+            <button id="checkBtn" type="button">Check</button>
+            <button id="skipBtn" type="button">Skip</button>
+        </div>
+
+        <p id="msg"></p>
     </div>
 
     <script>
-        const words = ["javascript", "canvas", "style", "document", "elements", "browser", "coding"];
-        let currentWord = "";
-        let scrambledWord = "";
+        const WORDS = [
+            { word: 'javascript', category: 'Coding' },
+            { word: 'function', category: 'Coding' },
+            { word: 'variable', category: 'Coding' },
+            { word: 'browser', category: 'Coding' },
+            { word: 'canvas', category: 'Coding' },
+            { word: 'keyboard', category: 'Objects' },
+            { word: 'monitor', category: 'Objects' },
+            { word: 'terminal', category: 'Coding' },
+            { word: 'password', category: 'Coding' },
+            { word: 'algorithm', category: 'Coding' },
+            { word: 'guitar', category: 'Music' },
+            { word: 'violin', category: 'Music' },
+            { word: 'rhythm', category: 'Music' },
+            { word: 'melody', category: 'Music' },
+            { word: 'penguin', category: 'Animals' },
+            { word: 'giraffe', category: 'Animals' },
+            { word: 'dolphin', category: 'Animals' },
+            { word: 'octopus', category: 'Animals' },
+            { word: 'hamster', category: 'Animals' },
+            { word: 'mountain', category: 'Places' },
+            { word: 'volcano', category: 'Places' },
+            { word: 'island', category: 'Places' },
+            { word: 'desert', category: 'Places' },
+            { word: 'bridge', category: 'Places' },
+            { word: 'kitchen', category: 'Home' },
+            { word: 'blanket', category: 'Home' },
+            { word: 'cabinet', category: 'Home' },
+            { word: 'curtain', category: 'Home' },
+            { word: 'orange', category: 'Food' },
+            { word: 'noodles', category: 'Food' },
+            { word: 'pancake', category: 'Food' },
+            { word: 'cheese', category: 'Food' },
+            { word: 'gravity', category: 'Science' },
+            { word: 'molecule', category: 'Science' },
+            { word: 'telescope', category: 'Science' },
+            { word: 'volcanic', category: 'Science' },
+            { word: 'adventure', category: 'Misc' },
+            { word: 'whisper', category: 'Misc' },
+            { word: 'puzzle', category: 'Misc' },
+            { word: 'journey', category: 'Misc' }
+        ];
 
-        function initGame() {
-            currentWord = words[Math.floor(Math.random() * words.length)];
-            scrambledWord = currentWord.split('').sort(() => Math.random() - 0.5).join('');
-            if(scrambledWord === currentWord) return initGame();
-            document.getElementById('scrambledWord').textContent = scrambledWord.toUpperCase();
-            document.getElementById('msg').textContent = "";
-            document.getElementById('userInput').value = "";
+        const scrambledEl = document.getElementById('scrambledWord');
+        const categoryEl = document.getElementById('category');
+        const inputEl = document.getElementById('userInput');
+        const msgEl = document.getElementById('msg');
+        const solvedEl = document.getElementById('solved');
+        const streakEl = document.getElementById('streak');
+
+        let current = null;
+        let solved = 0;
+        let streak = 0;
+        let locked = false;
+
+        function scramble(word) {
+            const letters = word.split('');
+            for (let i = letters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [letters[i], letters[j]] = [letters[j], letters[i]];
+            }
+            const attempt = letters.join('');
+            return attempt === word ? scramble(word) : attempt;
+        }
+
+        function nextWord() {
+            current = WORDS[Math.floor(Math.random() * WORDS.length)];
+            locked = false;
+            scrambledEl.textContent = scramble(current.word).toUpperCase();
+            categoryEl.textContent = current.category;
+            inputEl.value = '';
+            inputEl.disabled = false;
+            msgEl.textContent = '';
+            inputEl.focus();
+        }
+
+        function setMessage(text, color) {
+            msgEl.textContent = text;
+            msgEl.style.color = color;
         }
 
         function checkGuess() {
-            const guess = document.getElementById('userInput').value.toLowerCase().trim();
-            if(guess === currentWord) {
-                document.getElementById('msg').textContent = "🎉 Correct! Good job.";
-                document.getElementById('msg').style.color = "#2ecc71";
-                setTimeout(initGame, 1500);
+            if (locked) {
+                nextWord();
+                return;
+            }
+
+            const guess = inputEl.value.trim().toLowerCase();
+            if (!guess) return;
+
+            if (guess === current.word) {
+                locked = true;
+                solved++;
+                streak++;
+                solvedEl.textContent = solved;
+                streakEl.textContent = streak;
+                setMessage('Correct! Loading the next word…', '#2ecc71');
+                inputEl.disabled = true;
+                setTimeout(nextWord, 1200);
             } else {
-                document.getElementById('msg').textContent = "❌ Try again!";
-                document.getElementById('msg').style.color = "#e74c3c";
+                streak = 0;
+                streakEl.textContent = streak;
+                setMessage('Not quite — try again.', '#e74c3c');
+                inputEl.select();
             }
         }
 
-        function nextWord() { initGame(); }
-        initGame();
+        function skipWord() {
+            if (locked) {
+                nextWord();
+                return;
+            }
+            locked = true;
+            streak = 0;
+            streakEl.textContent = streak;
+            setMessage(`The word was "${current.word.toUpperCase()}".`, '#e67e22');
+            inputEl.disabled = true;
+            setTimeout(nextWord, 1500);
+        }
+
+        document.getElementById('checkBtn').addEventListener('click', checkGuess);
+        document.getElementById('skipBtn').addEventListener('click', skipWord);
+        inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkGuess();
+        });
+
+        nextWord();
     </script>
 </body>
 </html>
