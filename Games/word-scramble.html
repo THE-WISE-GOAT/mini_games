@@ -219,9 +219,7 @@
         }
 
         function checkGuess() {
-            if (locked) {
-                nextWord();
-                return;
+if (locked) return;
             }
 
             const guess = inputEl.value.trim().toLowerCase();
