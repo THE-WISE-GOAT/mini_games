@@ -190,6 +190,10 @@
           }
         }
         updateHud();
+        if (snake.length === TILES * TILES) {
+          over = true;
+          return;
+        }
         dropFruit();
       } else {
         snake.pop();
