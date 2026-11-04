@@ -206,6 +206,7 @@
       const mole = document.createElement('button');
       mole.type = 'button';
       mole.className = 'mole';
+      mole.disabled = true;
       mole.setAttribute('aria-label', 'Mole');
       mole.innerHTML = '<span class="snout"></span>';
       mole.addEventListener('click', () => whack(mole));
@@ -229,10 +230,12 @@
 
       const duration = Math.random() * 550 + 450;
       const mole = pickMole();
+      mole.disabled = false;
       mole.classList.add('up');
 
       peepTimer = setTimeout(() => {
         mole.classList.remove('up');
+        mole.disabled = true;
         peep();
       }, duration);
     }
@@ -240,6 +243,7 @@
     function whack(mole) {
       if (!running || !mole.classList.contains('up')) return;
       mole.classList.remove('up');
+      mole.disabled = true;
       mole.classList.add('hit');
       setTimeout(() => mole.classList.remove('hit'), 120);
       score++;
@@ -250,7 +254,10 @@
       running = false;
       clearTimeout(peepTimer);
       clearInterval(clockTimer);
-      moles.forEach((m) => m.classList.remove('up'));
+      moles.forEach((m) => {
+        m.classList.remove('up');
+        m.disabled = true;
+      });
       startBtn.disabled = false;
       startBtn.textContent = 'Play Again';
     }
