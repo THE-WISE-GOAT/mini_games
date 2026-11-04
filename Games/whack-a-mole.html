@@ -1,116 +1,306 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whack-A-Mole</title>
-    <style>
-        body {
-            background: #2c3e50;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-gap: 15px;
-            margin-top: 20px;
-        }
-        .hole {
-            width: 100px;
-            height: 100px;
-            background: #34495e;
-            border-radius: 50%;
-            position: relative;
-            overflow: hidden;
-            border: 3px solid #222;
-        }
-        .mole {
-            width: 80px;
-            height: 80px;
-            background: #d35400;
-            border-radius: 50%;
-            position: absolute;
-            top: 100px;
-            left: 10px;
-            transition: top 0.1s ease;
-            cursor: pointer;
-        }
-        .mole.up {
-            top: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            background: #27ae60;
-            border: none;
-            color: white;
-            font-size: 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Whack-a-Mole</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #1e2a35;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 1.6rem;
+    }
+
+    .hud {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 6px;
+      color: #b8c4cf;
+    }
+
+    .hud strong {
+      color: #ffd60a;
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .hole {
+      width: 100px;
+      height: 100px;
+      background: #2f3f4d;
+      border: 3px solid #16202a;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 8px 14px rgba(0, 0, 0, 0.55);
+    }
+
+    .mole {
+      position: absolute;
+      left: 10px;
+      top: 100px;
+      width: 80px;
+      height: 80px;
+      background: #8d6748;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: top 0.1s ease;
+      padding: 0;
+    }
+
+    .mole::before,
+    .mole::after {
+      content: '';
+      position: absolute;
+      top: 26px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #1b1208;
+    }
+
+    .mole::before { left: 20px; }
+    .mole::after { right: 20px; }
+
+    .mole .snout {
+      position: absolute;
+      left: 50%;
+      bottom: 16px;
+      width: 26px;
+      height: 18px;
+      margin-left: -13px;
+      border-radius: 50%;
+      background: #d9b08c;
+    }
+
+    .mole.up {
+      top: 10px;
+    }
+
+    .mole.hit {
+      background: #5d4430;
+    }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    button#startBtn {
+      padding: 10px 26px;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #27ae60;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button#startBtn:hover:not(:disabled) {
+      background: #219150;
+    }
+
+    button#startBtn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    #result {
+      min-height: 24px;
+      margin-top: 14px;
+      color: #ffd60a;
+      font-size: 1.05rem;
+    }
+
+    .hint {
+      color: #8fa1b0;
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 400px) {
+      .grid {
+        grid-template-columns: repeat(3, 84px);
+        gap: 12px;
+      }
+      .hole { width: 84px; height: 84px; }
+      .mole { width: 64px; height: 64px; left: 10px; top: 84px; }
+      .mole::before { left: 14px; }
+      .mole::after { right: 14px; }
+      .mole.up { top: 10px; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Whack-A-Mole!</h1>
-    <h2>Score: <span id="score">0</span></h2>
-    <button onclick="startGame()">Start Game</button>
-    <div class="grid">
-        <div class="hole"><div class="mole"></div></div>
-        <div class="hole"><div class="mole"></div></div>
-        <div class="hole"><div class="mole"></div></div>
-        <div class="hole"><div class="mole"></div></div>
-        <div class="hole"><div class="mole"></div></div>
-        <div class="hole"><div class="mole"></div></div>
-    </div>
+  <h1>Whack-a-Mole</h1>
 
-    <script>
-        const moles = document.querySelectorAll('.mole');
-        const scoreDisplay = document.getElementById('score');
-        let lastHole;
-        let timeUp = false;
-        let score = 0;
+  <div class="hud">
+    <span>Score: <strong id="score">0</strong></span>
+    <span>Time: <strong id="time">15</strong></span>
+    <span>Best: <strong id="best">0</strong></span>
+  </div>
+  <p class="hint">Only moles above ground count.</p>
 
-        function randomHole(moles) {
-            const idx = Math.floor(Math.random() * moles.length);
-            const hole = moles[idx];
-            if (hole === lastHole) return randomHole(moles);
-            lastHole = hole;
-            return hole;
+  <div class="grid" id="grid"></div>
+
+  <div class="controls">
+    <button id="startBtn" type="button">Start Game</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const ROUND_SECONDS = 15;
+    const HOLES = 6;
+
+    const grid = document.getElementById('grid');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
+    const bestEl = document.getElementById('best');
+    const resultEl = document.getElementById('result');
+    const startBtn = document.getElementById('startBtn');
+
+    const moles = [];
+    let score = 0;
+    let timeLeft = ROUND_SECONDS;
+    let running = false;
+    let peepTimer = null;
+    let clockTimer = null;
+    let lastHole = null;
+    let best = 0;
+
+    try {
+      best = Number(localStorage.getItem('whack-best')) || 0;
+    } catch (e) {
+      best = 0;
+    }
+    bestEl.textContent = best;
+
+    for (let i = 0; i < HOLES; i++) {
+      const hole = document.createElement('div');
+      hole.className = 'hole';
+
+      const mole = document.createElement('button');
+      mole.type = 'button';
+      mole.className = 'mole';
+      mole.disabled = true;
+      mole.setAttribute('aria-label', 'Mole');
+      mole.innerHTML = '<span class="snout"></span>';
+      mole.addEventListener('click', () => whack(mole));
+      hole.appendChild(mole);
+
+      grid.appendChild(hole);
+      moles.push(mole);
+    }
+
+    function pickMole() {
+      let mole = moles[Math.floor(Math.random() * moles.length)];
+      while (moles.length > 1 && mole === lastHole) {
+        mole = moles[Math.floor(Math.random() * moles.length)];
+      }
+      lastHole = mole;
+      return mole;
+    }
+
+    function peep() {
+      if (!running) return;
+
+      const duration = Math.random() * 550 + 450;
+      const mole = pickMole();
+      mole.disabled = false;
+      mole.classList.add('up');
+
+      peepTimer = setTimeout(() => {
+        mole.classList.remove('up');
+        mole.disabled = true;
+        peep();
+      }, duration);
+    }
+
+    function whack(mole) {
+      if (!running || !mole.classList.contains('up')) return;
+      mole.classList.remove('up');
+      mole.disabled = true;
+      mole.classList.add('hit');
+      setTimeout(() => mole.classList.remove('hit'), 120);
+      score++;
+      scoreEl.textContent = String(score);
+    }
+
+    function stopGame() {
+      running = false;
+      clearTimeout(peepTimer);
+      clearInterval(clockTimer);
+      moles.forEach((m) => {
+        m.classList.remove('up');
+        m.disabled = true;
+      });
+      startBtn.disabled = false;
+      startBtn.textContent = 'Play Again';
+    }
+
+    function endGame() {
+      stopGame();
+
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+        try {
+          localStorage.setItem('whack-best', String(best));
+        } catch (e) {
+          // storage unavailable
         }
+        resultEl.textContent = `Time's up! New best: ${score}.`;
+      } else {
+        resultEl.textContent = `Time's up! You whacked ${score}. Best is ${best}.`;
+      }
+    }
 
-        function peep() {
-            const time = Math.random() * (1000 - 400) + 400;
-            const mole = randomHole(moles);
-            mole.classList.add('up');
-            setTimeout(() => {
-                mole.classList.remove('up');
-                if (!timeUp) peep();
-            }, time);
-        }
+    function startGame() {
+      if (running) return;
 
-        function startGame() {
-            scoreDisplay.textContent = 0;
-            timeUp = false;
-            score = 0;
-            peep();
-            setTimeout(() => {
-                timeUp = true;
-                alert('Time is up! Final Score: ' + score);
-            }, 15000);
-        }
+      score = 0;
+      timeLeft = ROUND_SECONDS;
+      scoreEl.textContent = '0';
+      timeEl.textContent = String(ROUND_SECONDS);
+      resultEl.textContent = '';
+      startBtn.disabled = true;
+      startBtn.textContent = 'Running…';
+      running = true;
 
-        moles.forEach(mole => mole.addEventListener('click', function() {
-            if(!this.classList.contains('up')) return;
-            score++;
-            this.classList.remove('up');
-            scoreDisplay.textContent = score;
-        }));
-    </script>
+      peep();
+
+      clockTimer = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = String(timeLeft);
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+    }
+
+    startBtn.addEventListener('click', startGame);
+  </script>
 </body>
 </html>
